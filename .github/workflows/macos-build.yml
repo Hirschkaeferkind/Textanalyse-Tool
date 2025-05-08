@@ -1,50 +1,33 @@
-# Name des Workflows (wird auf GitHub angezeigt)
-name: Build macOS App
+name: Build macOS .app
 
-# Trigger: Wann soll dieser Workflow ausgeführt werden?
-# Hier: Bei jedem Push zum 'main'-Branch (oder 'master', je nach Ihrem Repository)
 on:
   push:
-    branches: [ main ] # Ändern Sie 'main' ggf. zu 'master'
-  # Optional: Manuell auslösbar machen
-  workflow_dispatch:
+    branches: [ "main" ]
 
-# Jobs: Die Aufgaben, die ausgeführt werden sollen
 jobs:
-  build-macos:
-    # Betriebssystem für den Job wählen
-    runs-on: macos-latest # Nutzt die neueste verfügbare macOS-Version von GitHub
+  build:
+    runs-on: macos-latest
 
-    # Schritte, die ausgeführt werden
     steps:
-    # 1. Code auschecken: Lädt Ihren Repository-Code auf die virtuelle Maschine
-    - name: Checkout code
-      uses: actions/checkout@v3 # Eine Standard-GitHub-Action
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # 2. Python einrichten: Installiert die gewünschte Python-Version
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11' # Wählen Sie eine passende Python-Version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    # 3. PyInstaller installieren: Installiert PyInstaller über pip (mit verbose output)
-    - name: Install PyInstaller
-      run: python -m pip install -v pyinstaller # *** Verbose (-v) hinzugefügt ***
+      - name: Install py2app
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install py2app
 
-    # 4. Anwendung bauen: Führt PyInstaller aus, um das .app-Bundle zu erstellen
-    - name: Build macOS App
-      run: |
-        python -m pyinstaller --windowed --name="Text-analysis-tool" Parser_v2.py
-        # App-Name und Skriptname wurden aktualisiert
+      - name: Build app
+        run: |
+          python3 setup.py py2app
 
-    # 4.1. Inhalt des dist-Ordners anzeigen: Zeigt im Log an, was PyInstaller erstellt hat
-    - name: List dist directory contents
-      run: ls -R dist
-      # Dieser Schritt hilft zu sehen, ob die .app-Datei überhaupt erstellt wurde
-
-    # 5. Artefakt hochladen: Lädt das erstellte .app-Bundle hoch, damit Sie es herunterladen können
-    - name: Upload macOS App Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: macos-app # Name des Artefakts, das heruntergeladen wird
-        path: dist/Text-analysis-tool.app # Pfad zum erstellten .app-Bundle (aktualisiert)
+      - name: Upload .app
+        uses: actions/upload-artifact@v3
+        with:
+          name: MyApp
+          path: dist/*.app
