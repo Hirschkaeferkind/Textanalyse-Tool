@@ -1,4 +1,4 @@
-name: Build macOS .app
+name: Build macOS .app (py2app + tkinter)
 
 on:
   push:
@@ -9,25 +9,33 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-      - name: Install py2app
-        run: |
-          python3 -m pip install --upgrade pip
-          pip3 install py2app
+    - name: Install Homebrew and tcl-tk
+      run: |
+        brew install tcl-tk
+        echo "LDFLAGS=-L/opt/homebrew/opt/tcl-tk/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I/opt/homebrew/opt/tcl-tk/include" >> $GITHUB_ENV
+        echo "PATH=/opt/homebrew/opt/tcl-tk/bin:$PATH" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/opt/homebrew/opt/tcl-tk/lib/pkgconfig" >> $GITHUB_ENV
 
-      - name: Build app
-        run: |
-          python3 setup.py py2app
+    - name: Install py2app
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install py2app
 
-      - name: Upload .app
-        uses: actions/upload-artifact@v4
-        with:
-          name: Text-Tool
-          path: dist/*.app
+    - name: Build macOS .app with py2app
+      run: |
+        python3 setup.py py2app
+
+    - name: Upload .app as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MyApp
+        path: dist/*.app
