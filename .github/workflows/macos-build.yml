@@ -37,5 +37,5 @@ jobs:
     - name: Upload .app as Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: MyApp
+        name: TextTool
         path: dist/*.app
