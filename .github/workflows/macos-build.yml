@@ -40,7 +40,7 @@ jobs:
 
     # 5. Artefakt hochladen: Lädt das erstellte .app-Bundle hoch, damit Sie es herunterladen können
     - name: Upload macOS App Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: macos-app # Name des Artefakts, das heruntergeladen wird
         path: dist/Text-analysis-tool.app # Pfad zum erstellten .app-Bundle (passen Sie "IhreApp" an)
