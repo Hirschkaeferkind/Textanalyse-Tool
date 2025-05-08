@@ -3,19 +3,108 @@ from tkinter import scrolledtext, END, font as tkfont
 import re
 import difflib
 
+# --- Übersetzungen ---
+translations = {
+    'de': {
+        'window_title': "Textanalyse-Tool",
+        'label_datensatz': "Originaltext (Datensatz):",
+        'label_vergleich': "Vergleichstext (optional):",
+        'button_analyse': "Analysieren",
+        'button_sprache': "Sprache wechseln (EN)",
+        'analyse_header': "--- Analyse Originaltext (Datensatz) ---",
+        'vergleich_header': "--- Textvergleich ---",
+        'hinweis_header': " Wichtige Hinweise:",
+        'zitat_label': "(Zitat)",
+        'klammer_label': "(Klammer)",
+        'single_quote_label': "(Einfaches Zitat)",
+        'slash_label': "(Schrägstrich-Text)",
+        'error_no_datensatz': "Bitte geben Sie einen Originaltext (Datensatz) ein.",
+        'error_no_vergleich_datensatz': "Für einen Textvergleich wird auch der Originaltext benötigt.",
+        'error_liste_leer': "Der eingegebene Originaltext (Liste) ist leer.",
+        'error_liste_format': "Fehler: Originaltext nicht als Liste erkannt (muss mit '[' beginnen und mit ']' enden).",
+        'error_segment_parse': "Fehler beim Parsen eines Segments im Originaltext: '{segment}'. Stellen Sie sicher, dass alle Listenelemente in Anführungszeichen stehen.",
+        'error_target_question_format': "Fehler: Ungültiges Format für 'target question'. Anführungszeichen oder Doppelpunkt fehlen.",
+        'error_target_question_klammer': "Fehler: Ungültiges 'target question' Format (fehlende schließende Klammer '}')",
+        'error_target_question_wert': "Fehler: Wert für 'target question' konnte nicht extrahiert werden (Anführungszeichen fehlen oder sind falsch platziert).",
+        'error_liste_elemente_extraktion': "Konnte keine gültigen Listenelemente aus dem Originaltext extrahieren.",
+        'info_keine_funde': "Originaltext-Analyse: Keine Zitate, Klammern oder spezielle Hinweise gefunden.",
+        'info_keine_analyse': "Keine Analyse durchgeführt. Bitte Eingaben prüfen.",
+        'diff_original_header': "Originaltext (Datensatz) mit Unterschieden:",
+        'diff_vergleich_header': "Vergleichstext mit Unterschieden:",
+        'hinweis_alphabetical': "HINWEIS: 'alphabetical order' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_abab': "HINWEIS: 'ABAB rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_aabb': "HINWEIS: 'AABB rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_abba': "HINWEIS: 'ABBA rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_cbbc': "HINWEIS: 'CBBC rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_abcd': "HINWEIS: 'ABCD rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_cdcd': "HINWEIS: 'CDCD rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_efef': "HINWEIS: 'EFEF rhyme' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_gg': "HINWEIS: 'GG rhyme' (Couplet) gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_rhyme': "HINWEIS: 'rhyme' (oder eine Variante) gefunden. Bitte finale Übersetzung auf Reimschema prüfen.",
+        'hinweis_syllables': "HINWEIS: 'syllables' gefunden. Bitte finale Übersetzung prüfen.",
+        'hinweis_syllable': "HINWEIS: 'syllable' gefunden. Bitte finale Übersetzung prüfen.",
+    },
+    'en': {
+        'window_title': "Text Analysis Tool",
+        'label_datensatz': "Original Text (Dataset):",
+        'label_vergleich': "Comparison Text (optional):",
+        'button_analyse': "Analyze",
+        'button_sprache': "Change Language (DE)",
+        'analyse_header': "--- Analysis Original Text (Dataset) ---",
+        'vergleich_header': "--- Text Comparison ---",
+        'hinweis_header': " Important Notes:",
+        'zitat_label': "(Quote)",
+        'klammer_label': "(Parentheses)",
+        'single_quote_label': "(Single Quote)",
+        'slash_label': "(Slash Text)",
+        'error_no_datensatz': "Please enter an original text (dataset).",
+        'error_no_vergleich_datensatz': "Original text is required for text comparison.",
+        'error_liste_leer': "The entered original text (list) is empty.",
+        'error_liste_format': "Error: Original text not recognized as a list (must start with '[' and end with ']').",
+        'error_segment_parse': "Error parsing a segment in the original text: '{segment}'. Ensure all list items are enclosed in quotes.",
+        'error_target_question_format': "Error: Invalid format for 'target question'. Missing quotes or colon.",
+        'error_target_question_klammer': "Error: Invalid 'target question' format (missing closing brace '}')",
+        'error_target_question_wert': "Error: Could not extract value for 'target question' (quotes missing or misplaced).",
+        'error_liste_elemente_extraktion': "Could not extract valid list items from the original text.",
+        'info_keine_funde': "Original Text Analysis: No quotes, parentheses, or special notes found.",
+        'info_keine_analyse': "No analysis performed. Please check inputs.",
+        'diff_original_header': "Original Text (Dataset) with Differences:",
+        'diff_vergleich_header': "Comparison Text with Differences:",
+        'hinweis_alphabetical': "NOTE: 'alphabetical order' found. Please check final translation.",
+        'hinweis_abab': "NOTE: 'ABAB rhyme' found. Please check final translation.",
+        'hinweis_aabb': "NOTE: 'AABB rhyme' found. Please check final translation.",
+        'hinweis_abba': "NOTE: 'ABBA rhyme' found. Please check final translation.",
+        'hinweis_cbbc': "NOTE: 'CBBC rhyme' found. Please check final translation.",
+        'hinweis_abcd': "NOTE: 'ABCD rhyme' found. Please check final translation.",
+        'hinweis_cdcd': "NOTE: 'CDCD rhyme' found. Please check final translation.",
+        'hinweis_efef': "NOTE: 'EFEF rhyme' found. Please check final translation.",
+        'hinweis_gg': "NOTE: 'GG rhyme' (couplet) found. Please check final translation.",
+        'hinweis_rhyme': "NOTE: 'rhyme' (or variant) found. Please check final translation for rhyme scheme.",
+        'hinweis_syllables': "NOTE: 'syllables' found. Please check final translation.",
+        'hinweis_syllable': "NOTE: 'syllable' found. Please check final translation.",
+    }
+}
+
+# Funktion zum Abrufen von Übersetzungen (wird später definiert, benötigt aber current_language)
+def get_translation(key, **kwargs):
+    """Ruft die Übersetzung für den gegebenen Schlüssel ab und formatiert sie ggf."""
+    # Diese Funktion benötigt 'current_language', die nach 'root' definiert wird.
+    # Stellen Sie sicher, dass diese Funktion aufgerufen wird, nachdem 'current_language' initialisiert wurde.
+    lang = current_language.get()
+    text = translations.get(lang, {}).get(key, f"<{key}_missing>") # Fallback, falls Schlüssel fehlt
+    try:
+        return text.format(**kwargs) # Ermöglicht das Einfügen von Werten, z.B. bei Fehlermeldungen
+    except KeyError:
+        return text # Falls Formatierung fehlschlägt oder nicht benötigt wird
+
 # --- Kernlogik ---
 def normalize_quotes(text):
     """
     Ersetzt verschiedene Unicode-Anführungszeichen durch Standard-ASCII-Anführungszeichen.
     """
     quote_map = {
-        '\u201c': '"',  # “ LEFT DOUBLE QUOTATION MARK
-        '\u201d': '"',  # ” RIGHT DOUBLE QUOTATION MARK
-        '\u201e': '"',  # „ DOUBLE LOW-9 QUOTATION MARK
-        '\u00ab': '"',  # « LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
-        '\u00bb': '"',  # » RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
-        '\u2018': "'",  # ‘ LEFT SINGLE QUOTATION MARK
-        '\u2019': "'",  # ’ RIGHT SINGLE QUOTATION MARK
+        '\u201c': '"', '\u201d': '"', '\u201e': '"', '\u00ab': '"', '\u00bb': '"',
+        '\u2018': "'", '\u2019': "'",
     }
     for fancy_quote, standard_quote in quote_map.items():
         text = text.replace(fancy_quote, standard_quote)
@@ -24,56 +113,46 @@ def normalize_quotes(text):
 def extrahiere_funde_aus_datensatz(text_listen_str):
     """
     Analysiert den Haupt-Datensatz.
-    Extrahiert Phrasen in doppelten Anführungszeichen, einfachen Anführungszeichen,
-    Text in Klammern, Text zwischen Schrägstrichen und prüft auf spezielle Hinweis-Phrasen.
-    Gibt eine Liste von Funden (Typ, Text), eine Statusmeldung und eine Liste von Hinweismeldungen zurück.
-    Typen: 'zitat', 'klammer', 'slash_text', 'single_quote_text'
+    Gibt eine Liste von Funden (Typ, Text), einen Fehler-Schlüssel oder None,
+    und eine Liste von Hinweis-Schlüsseln zurück.
     """
     normalized_text_listen_str = normalize_quotes(text_listen_str)
     verarbeiteter_input = normalized_text_listen_str.strip()
     
     actual_item_contents = []
-    is_single_item_input = False # Flag to indicate if the input was a single "target question" item
+    is_single_item_input = False 
 
-    # Behandlung für Eingaben, die mit {"target question": beginnen
     if verarbeiteter_input.startswith('{"target question":'):
         is_single_item_input = True
         prefix = '{"target question":'
         try:
-            # Finde den Start des Wert-Strings (erstes Anführungszeichen nach dem Prefix-Teil)
             value_start_quote_index = verarbeiteter_input.index('"', len(prefix))
-            # Der eigentliche Wert beginnt nach diesem Anführungszeichen
             value_start_index = value_start_quote_index + 1
-            
-            # Finde das Ende des Wert-Strings (letztes Anführungszeichen vor der schließenden '}')
             closing_brace_index = verarbeiteter_input.rfind('}')
-            if closing_brace_index == -1: # Sollte nicht passieren, wenn startswith und strip korrekt waren
-                return [], "Fehler: Ungültiges 'target question' Format (fehlende schließende Klammer '}')", []
-
+            if closing_brace_index == -1: 
+                return [], 'error_target_question_klammer', []
             value_end_index = verarbeiteter_input.rfind('"', value_start_index, closing_brace_index)
-
             if value_start_index < value_end_index :
                 extracted_sentence = verarbeiteter_input[value_start_index:value_end_index]
-                actual_item_contents = [extracted_sentence.strip()] # Als einzelnes Element behandeln
+                actual_item_contents = [extracted_sentence.strip()] 
             else:
-                return [], "Fehler: Wert für 'target question' konnte nicht extrahiert werden (Anführungszeichen fehlen oder sind falsch platziert).", []
-        except ValueError: # index oder rfind hat das Zeichen nicht gefunden
-            return [], "Fehler: Ungültiges Format für 'target question'. Anführungszeichen oder Doppelpunkt fehlen.", []
+                return [], 'error_target_question_wert', []
+        except ValueError: 
+            return [], 'error_target_question_format', []
     
     if not is_single_item_input:
-        # Bestehende Logik für listenartige Eingaben
         if verarbeiteter_input.startswith('"') and verarbeiteter_input.endswith('"') and len(verarbeiteter_input) > 1:
             temp_stripped = verarbeiteter_input[1:-1].strip()
             if temp_stripped.startswith('[') and temp_stripped.endswith(']'):
                 verarbeiteter_input = temp_stripped
 
         if not (verarbeiteter_input.startswith('[') and verarbeiteter_input.endswith(']')):
-            return [], "Fehler: Originaltext nicht als Liste erkannt (muss mit '[' beginnen und mit ']' enden).", []
+            return [], 'error_liste_format', []
 
         list_content_str = verarbeiteter_input[1:-1].strip()
 
         if not list_content_str:
-            return [], "Der eingegebene Originaltext (Liste) ist leer.", []
+            return [], 'error_liste_leer', []
 
         list_of_quoted_segments = re.split(r',(?=(?:[^"]*"[^"]*")*[^"]*$)', list_content_str)
         
@@ -83,35 +162,35 @@ def extrahiere_funde_aus_datensatz(text_listen_str):
                 content = processed_segment[1:-1] 
                 actual_item_contents.append(content)
             elif processed_segment: 
-                 return [], f"Fehler beim Parsen eines Segments im Originaltext: '{processed_segment}'. Stellen Sie sicher, dass alle Listenelemente in Anführungszeichen stehen.", []
+                 # Rückgabe des Fehler-Schlüssels und des problematischen Segments für die Formatierung
+                 return [], ('error_segment_parse', {'segment': processed_segment}), []
 
-    # --- Ab hier ist die Verarbeitung für actual_item_contents gleich, egal ob einzeln oder Liste ---
     alle_funde = [] 
-    hinweis_meldungen_fuer_ausgabe = []
+    hinweis_schluessel_fuer_ausgabe = [] # Speichert jetzt nur die Schlüssel
     regex_zitat = r'"([^"]*)"'
     regex_single_quote = r"'([^']*)'"
     regex_klammer = r'\(([^)]*)\)'
     regex_slash = r'/([^/]*)/'
 
-    hinweis_phrasen_map = {
-        "alphabetical order": "HINWEIS: 'alphabetical order' gefunden. Bitte finale Übersetzung prüfen.",
-        "abab rhyme": "HINWEIS: 'ABAB rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "aabb rhyme": "HINWEIS: 'AABB rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "abba rhyme": "HINWEIS: 'ABBA rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "cbbc rhyme": "HINWEIS: 'CBBC rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "abcd rhyme": "HINWEIS: 'ABCD rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "cdcd rhyme": "HINWEIS: 'CDCD rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "efef rhyme": "HINWEIS: 'EFEF rhyme' gefunden. Bitte finale Übersetzung prüfen.",
-        "gg rhyme": "HINWEIS: 'GG rhyme' (Couplet) gefunden. Bitte finale Übersetzung prüfen.",
-        "rhyme": "HINWEIS: 'rhyme' (oder eine Variante) gefunden. Bitte finale Übersetzung auf Reimschema prüfen.",
-        "syllables": "HINWEIS: 'syllables' gefunden. Bitte finale Übersetzung prüfen.",
-        "syllable": "HINWEIS: 'syllable' gefunden. Bitte finale Übersetzung prüfen."
+    # Mapping von Suchphrasen zu Hinweis-Schlüsseln
+    hinweis_schluessel_map = {
+        "alphabetical order": "hinweis_alphabetical",
+        "abab rhyme": "hinweis_abab",
+        "aabb rhyme": "hinweis_aabb",
+        "abba rhyme": "hinweis_abba",
+        "cbbc rhyme": "hinweis_cbbc",
+        "abcd rhyme": "hinweis_abcd",
+        "cdcd rhyme": "hinweis_cdcd",
+        "efef rhyme": "hinweis_efef",
+        "gg rhyme": "hinweis_gg",
+        "rhyme": "hinweis_rhyme",
+        "syllables": "hinweis_syllables",
+        "syllable": "hinweis_syllable"
     }
-    geordnete_hinweis_keys = [
-        "abab rhyme", "aabb rhyme", "abba rhyme", "cbbc rhyme", 
-        "abcd rhyme", "cdcd rhyme", "efef rhyme", "gg rhyme",
-        "alphabetical order", "syllables", "syllable", "rhyme"
-    ]
+    geordnete_hinweis_keys_intern = list(hinweis_schluessel_map.keys())
+    # Sortieren, um spezifischere Reime zuerst zu prüfen
+    geordnete_hinweis_keys_intern.sort(key=lambda x: (not x.endswith("rhyme"), len(x)), reverse=True)
+
 
     for element_string in actual_item_contents:
         if not isinstance(element_string, str): 
@@ -130,18 +209,19 @@ def extrahiere_funde_aus_datensatz(text_listen_str):
         for st in slash_texte: alle_funde.append(('slash_text', st))
 
         element_string_lower = element_string.lower()
-        for phrase_key in geordnete_hinweis_keys:
+        for phrase_key in geordnete_hinweis_keys_intern:
             if phrase_key in element_string_lower:
-                botschaft = hinweis_phrasen_map[phrase_key]
-                if botschaft not in hinweis_meldungen_fuer_ausgabe:
-                    hinweis_meldungen_fuer_ausgabe.append(botschaft)
+                hinweis_key = hinweis_schluessel_map[phrase_key]
+                if hinweis_key not in hinweis_schluessel_fuer_ausgabe:
+                    hinweis_schluessel_fuer_ausgabe.append(hinweis_key)
         
-    if not alle_funde and not actual_item_contents and not hinweis_meldungen_fuer_ausgabe: 
+    if not alle_funde and not actual_item_contents and not hinweis_schluessel_fuer_ausgabe: 
          if not actual_item_contents and not (verarbeiteter_input.startswith('[') and verarbeiteter_input.endswith(']')): 
              pass 
          elif not actual_item_contents: 
-             return [], "Der eingegebene Originaltext (Liste) ist leer.", []
-    return alle_funde, None, hinweis_meldungen_fuer_ausgabe
+             return [], 'error_liste_leer', [] # War eine leere Liste "[]"
+             
+    return alle_funde, None, hinweis_schluessel_fuer_ausgabe
 
 def erstelle_diff_darstellung(text1_str, text2_str):
     text1_str = normalize_quotes(text1_str) 
@@ -163,6 +243,26 @@ def erstelle_diff_darstellung(text1_str, text2_str):
     return text1_segmente, text2_segmente
 
 # --- GUI-spezifischer Code ---
+def update_ui_texts():
+    """Aktualisiert alle statischen Texte der GUI basierend auf der aktuellen Sprache."""
+    lang = current_language.get()
+    root.title(get_translation('window_title'))
+    label_datensatz.config(text=get_translation('label_datensatz'))
+    label_vergleich.config(text=get_translation('label_vergleich'))
+    analyse_button.config(text=get_translation('button_analyse'))
+    sprache_wechseln_button.config(text=get_translation('button_sprache'))
+
+def toggle_language():
+    """Wechselt die Sprache und aktualisiert die GUI."""
+    if current_language.get() == 'de':
+        current_language.set('en')
+    else:
+        current_language.set('de')
+    update_ui_texts()
+    ausgabe_konsole.configure(state='normal')
+    ausgabe_konsole.insert('1.0', f"Sprache auf '{current_language.get().upper()}' geändert.\nLanguage changed to '{current_language.get().upper()}'.\n\n", 'hinweis_tag')
+    ausgabe_konsole.configure(state='disabled')
+
 def prozess_eingabe():
     try:
         user_input_datensatz = eingabe_feld_datensatz.get("1.0", END).strip()
@@ -173,60 +273,66 @@ def prozess_eingabe():
         has_displayed_something = False
 
         if not user_input_datensatz:
-            ausgabe_konsole.insert(END, "Bitte geben Sie einen Originaltext (Datensatz) ein.\n", 'fehler_tag')
+            ausgabe_konsole.insert(END, get_translation('error_no_datensatz') + "\n", 'fehler_tag')
             has_displayed_something = True
         else:
-            funde_datensatz, fehlermeldung_datensatz, hinweis_meldungen = extrahiere_funde_aus_datensatz(user_input_datensatz)
+            funde_datensatz, fehlermeldung_key, hinweis_schluessel = extrahiere_funde_aus_datensatz(user_input_datensatz)
             
-            if fehlermeldung_datensatz:
-                ausgabe_konsole.insert(END, f"Originaltext-Analyse: {fehlermeldung_datensatz}\n\n", 'fehler_tag') 
+            fehler_text = None
+            if isinstance(fehlermeldung_key, tuple): 
+                 fehler_text = get_translation(fehlermeldung_key[0], **fehlermeldung_key[1])
+            elif isinstance(fehlermeldung_key, str): 
+                 fehler_text = get_translation(fehlermeldung_key)
+
+            if fehler_text:
+                ausgabe_konsole.insert(END, f"{get_translation('analyse_header')}: {fehler_text}\n\n", 'fehler_tag') 
                 has_displayed_something = True
-            elif funde_datensatz or hinweis_meldungen: 
-                ausgabe_konsole.insert(END, "\n--- Analyse Originaltext (Datensatz) ---\n", 'header_tag') 
+            elif funde_datensatz or hinweis_schluessel: 
+                ausgabe_konsole.insert(END, f"\n{get_translation('analyse_header')}\n", 'header_tag') 
                 if funde_datensatz:
                     for typ, text in funde_datensatz:
                         ausgabe_konsole.insert(END, "- ")
                         if typ == 'zitat':
                             ausgabe_konsole.insert(END, f'"{text}"', 'zitat_tag')
-                            ausgabe_konsole.insert(END, " (Zitat)\n")
+                            ausgabe_konsole.insert(END, f" {get_translation('zitat_label')}\n")
                         elif typ == 'single_quote_text':
                             ausgabe_konsole.insert(END, f"'{text}'", 'single_quote_tag')
-                            ausgabe_konsole.insert(END, " (Einfaches Zitat)\n")
+                            ausgabe_konsole.insert(END, f" {get_translation('single_quote_label')}\n")
                         elif typ == 'klammer':
                             ausgabe_konsole.insert(END, f'({text})', 'klammer_tag')
-                            ausgabe_konsole.insert(END, " (Klammer)\n")
+                            ausgabe_konsole.insert(END, f" {get_translation('klammer_label')}\n")
                         elif typ == 'slash_text':
                             ausgabe_konsole.insert(END, f'/{text}/', 'slash_tag')
-                            ausgabe_konsole.insert(END, " (Schrägstrich-Text)\n")
+                            ausgabe_konsole.insert(END, f" {get_translation('slash_label')}\n")
                 
-                if hinweis_meldungen:
-                    ausgabe_konsole.insert(END, "\n Wichtige Hinweise:\n", 'header_hinweis_tag')
-                    for hinweis in hinweis_meldungen:
-                        ausgabe_konsole.insert(END, f"- {hinweis}\n", 'hinweis_tag')
+                if hinweis_schluessel:
+                    ausgabe_konsole.insert(END, f"\n{get_translation('hinweis_header')}\n", 'header_hinweis_tag')
+                    for hinweis_key in hinweis_schluessel:
+                        ausgabe_konsole.insert(END, f"- {get_translation(hinweis_key)}\n", 'hinweis_tag')
 
                 ausgabe_konsole.insert(END, "---------------------------------------\n\n")
                 has_displayed_something = True
             else:
-                ausgabe_konsole.insert(END, "\nOriginaltext-Analyse: Keine Zitate, Klammern oder spezielle Hinweise gefunden.\n\n") 
+                ausgabe_konsole.insert(END, f"\n{get_translation('info_keine_funde')}\n\n") 
                 has_displayed_something = True
         
         if user_input_vergleichstext:
             if not user_input_datensatz:
-                ausgabe_konsole.insert(END, "Für einen Textvergleich wird auch der Originaltext benötigt.\n", 'fehler_tag')
+                ausgabe_konsole.insert(END, get_translation('error_no_vergleich_datensatz') + "\n", 'fehler_tag')
                 has_displayed_something = True
             else:
-                ausgabe_konsole.insert(END, "\n--- Textvergleich ---\n", 'header_tag') 
+                ausgabe_konsole.insert(END, f"\n{get_translation('vergleich_header')}\n", 'header_tag') 
                 text1_segmente, text2_segmente = erstelle_diff_darstellung(user_input_datensatz, user_input_vergleichstext)
-                ausgabe_konsole.insert(END, "\nOriginaltext (Datensatz) mit Unterschieden:\n") 
+                ausgabe_konsole.insert(END, f"\n{get_translation('diff_original_header')}\n") 
                 for text_teil, tag_name in text1_segmente: ausgabe_konsole.insert(END, text_teil, tag_name)
                 ausgabe_konsole.insert(END, "\n\n")
-                ausgabe_konsole.insert(END, "Vergleichstext mit Unterschieden:\n")
+                ausgabe_konsole.insert(END, f"{get_translation('diff_vergleich_header')}\n")
                 for text_teil, tag_name in text2_segmente: ausgabe_konsole.insert(END, text_teil, tag_name)
                 ausgabe_konsole.insert(END, "\n---------------------\n\n")
                 has_displayed_something = True
         
         if not has_displayed_something: 
-             ausgabe_konsole.insert(END, "Keine Analyse durchgeführt. Bitte Eingaben prüfen.\n")
+             ausgabe_konsole.insert(END, get_translation('info_keine_analyse') + "\n")
         eingabe_feld_datensatz.delete("1.0", END)
         eingabe_feld_vergleich.delete("1.0", END)
         
@@ -243,11 +349,13 @@ def prozess_eingabe():
 
 # Hauptfenster erstellen
 root = tk.Tk()
-root.title("Textanalyse-Tool")
+# *** KORREKTUR: Globale Variable NACH root = tk.Tk() definieren ***
+current_language = tk.StringVar(value='de') # Standardmäßig Deutsch
+
 root.geometry("750x700") 
 root.resizable(False, False) 
-dark_gray_bg = "#424242" # Dunkelgrau
-light_text_fg = "white"   # Weiß für Text auf dunklem Hintergrund
+dark_gray_bg = "#424242" 
+light_text_fg = "white"   
 root.configure(bg=dark_gray_bg)
 
 default_font_family = "Arial"
@@ -283,26 +391,43 @@ ausgabe_konsole.tag_configure('diff_added_tag', foreground='#388E3C', font=bold_
 eingabe_haupt_container = tk.Frame(root, bg=dark_gray_bg) 
 eingabe_haupt_container.pack(padx=10, pady=(0,10), fill=tk.X)
 
-def erstelle_eingabe_block(parent_frame, label_text, text_height):
+# Funktion zum Erstellen eines Eingabe-Blocks (Label + Textfeld)
+def erstelle_eingabe_block(parent_frame, label_text_key, text_height):
     block_frame = tk.Frame(parent_frame, bg=dark_gray_bg) 
     block_frame.pack(fill=tk.X, pady=(5,5)) 
     
-    label = tk.Label(block_frame, text=label_text, anchor="w", bg=dark_gray_bg, fg=light_text_fg) 
+    # Label wird jetzt global gespeichert, um Text aktualisieren zu können
+    label = tk.Label(block_frame, text=get_translation(label_text_key), anchor="w", bg=dark_gray_bg, fg=light_text_fg) 
     label.pack(side=tk.TOP, fill=tk.X, pady=(0,2)) 
     
     text_widget = tk.Text(block_frame, height=text_height, wrap=tk.WORD, font=default_font, 
                           relief=tk.SOLID, borderwidth=1, bg="white", fg="black") 
     text_widget.pack(fill=tk.X, expand=True)
-    return text_widget
+    # Gib Label und Textfeld zurück
+    return label, text_widget
 
-# Eingabefelder erstellen mit REDUZIERTEN HÖHEN
-eingabe_feld_datensatz = erstelle_eingabe_block(eingabe_haupt_container, "Originaltext (Datensatz):", 4) 
-eingabe_feld_vergleich = erstelle_eingabe_block(eingabe_haupt_container, "Vergleichstext (optional):", 4) 
+# Eingabefelder erstellen und Labels speichern
+label_datensatz, eingabe_feld_datensatz = erstelle_eingabe_block(eingabe_haupt_container, 'label_datensatz', 4) 
+label_vergleich, eingabe_feld_vergleich = erstelle_eingabe_block(eingabe_haupt_container, 'label_vergleich', 4) 
+
+# Rahmen für die Buttons am unteren Rand
+button_rahmen = tk.Frame(eingabe_haupt_container, bg=dark_gray_bg)
+button_rahmen.pack(pady=(10,5))
 
 # Button zum Analysieren
-analyse_button = tk.Button(eingabe_haupt_container, text="Analysieren", command=prozess_eingabe, 
+analyse_button = tk.Button(button_rahmen, text=get_translation('button_analyse'), command=prozess_eingabe, 
                            font=bold_font, 
                            bg="#4CAF50", fg="white", relief=tk.RAISED, borderwidth=1, padx=15, pady=5) 
-analyse_button.pack(pady=(10,5)) 
+analyse_button.pack(side=tk.LEFT, padx=(0, 10)) # Links im Button-Rahmen
 
+# Button zum Sprache wechseln
+sprache_wechseln_button = tk.Button(button_rahmen, text=get_translation('button_sprache'), command=toggle_language,
+                                    font=default_font, relief=tk.RAISED, borderwidth=1, padx=10, pady=5)
+sprache_wechseln_button.pack(side=tk.LEFT) # Rechts neben dem Analyse-Button
+
+
+# Initialisiere die UI-Texte beim Start
+update_ui_texts()
+
+# Start der GUI-Schleife
 root.mainloop()
