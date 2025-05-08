@@ -34,13 +34,13 @@ jobs:
     # 4. Anwendung bauen: Führt PyInstaller aus, um das .app-Bundle zu erstellen
     - name: Build macOS App
       run: |
-        python -m pyinstaller --windowed --name="Textanalyse-Tool" Parser_v2.py
-        # ÄNDERN: Ersetzen Sie "TextanalyseTool" durch den gewünschten App-Namen
-        # ÄNDERN: Ersetzen Sie Parser_v2.py durch den Namen Ihrer Python-Datei
+        python -m pyinstaller --windowed --name="Text-analysis-tool" Parser_v2.py
+        # Ersetzen Sie "IhreApp" durch den gewünschten App-Namen
+        # Ersetzen Sie IhrSkriptName.py durch den Namen Ihrer Python-Datei
 
     # 5. Artefakt hochladen: Lädt das erstellte .app-Bundle hoch, damit Sie es herunterladen können
     - name: Upload macOS App Artifact
       uses: actions/upload-artifact@v3
       with:
         name: macos-app # Name des Artefakts, das heruntergeladen wird
-        path: dist/Textanalyse-Tool.app # ÄNDERN: Pfad zum erstellten .app-Bundle (passen Sie "TextanalyseTool" an)
+        path: dist/Text-analysis-tool.app # Pfad zum erstellten .app-Bundle (passen Sie "IhreApp" an)
