@@ -1,0 +1,46 @@
+# Name des Workflows (wird auf GitHub angezeigt)
+name: Build macOS App
+
+# Trigger: Wann soll dieser Workflow ausgeführt werden?
+# Hier: Bei jedem Push zum 'main'-Branch (oder 'master', je nach Ihrem Repository)
+on:
+  push:
+    branches: [ main ] # Ändern Sie 'main' ggf. zu 'master'
+  # Optional: Manuell auslösbar machen
+  workflow_dispatch:
+
+# Jobs: Die Aufgaben, die ausgeführt werden sollen
+jobs:
+  build-macos:
+    # Betriebssystem für den Job wählen
+    runs-on: macos-latest # Nutzt die neueste verfügbare macOS-Version von GitHub
+
+    # Schritte, die ausgeführt werden
+    steps:
+    # 1. Code auschecken: Lädt Ihren Repository-Code auf die virtuelle Maschine
+    - name: Checkout code
+      uses: actions/checkout@v3 # Eine Standard-GitHub-Action
+
+    # 2. Python einrichten: Installiert die gewünschte Python-Version
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' # Wählen Sie eine passende Python-Version
+
+    # 3. PyInstaller installieren: Installiert PyInstaller über pip
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+
+    # 4. Anwendung bauen: Führt PyInstaller aus, um das .app-Bundle zu erstellen
+    - name: Build macOS App
+      run: |
+        python -m pyinstaller --windowed --name="Textanalyse-Tool" Parser_v2.py
+        # ÄNDERN: Ersetzen Sie "TextanalyseTool" durch den gewünschten App-Namen
+        # ÄNDERN: Ersetzen Sie Parser_v2.py durch den Namen Ihrer Python-Datei
+
+    # 5. Artefakt hochladen: Lädt das erstellte .app-Bundle hoch, damit Sie es herunterladen können
+    - name: Upload macOS App Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-app # Name des Artefakts, das heruntergeladen wird
+        path: dist/Textanalyse-Tool.app # ÄNDERN: Pfad zum erstellten .app-Bundle (passen Sie "TextanalyseTool" an)
